@@ -2,12 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- height=device-height を含め、viewport を明示 -->
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, viewport-fit=cover">
     <title>分裂パズル</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@600;800&display=swap');
-
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,7 +19,6 @@
             justify-content: center;
         }
 
-        /* ラッパー：ビューポート全体を占める */
         #scaleWrapper {
             width: 100%;
             height: 100%;
@@ -29,69 +26,39 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            position: relative; /* container を絶対配置して中央に合わせるため */
+            position: relative;
         }
 
-        /* 元の container をそのまま利用（id を付与） */
         .container {
             max-width: 672px;
             width: 100%;
-            /* 位置は JS で中央寄せする（absolute） */
             position: absolute;
             left: 50%;
             top: 50%;
             transform-origin: center center;
-            /* マージンを多少残して見栄えを保つ */
             padding: 16px;
         }
 
         h1 {
-    font-family: 'Oxanium', sans-serif;
-    font-size: clamp(2.6rem, 6vw, 3.8rem);
-    font-weight: 800;
-    text-align: center;
-    color: #f5e9ff;
-    letter-spacing: 0.18em;
-    text-shadow:
-        0 2px 6px rgba(0,0,0,0.4),
-        0 0 25px rgba(139, 92, 246, 0.45);
-    margin-bottom: 8px;
-       }
-
-.split-title {
-    position: relative;
-}
-
-.split-title::before,
-.split-title::after {
-    content: attr(data-text);
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    text-align: center;
-    pointer-events: none;
-}
-
-.split-title::before {
-    color: #22d3ee;
-    transform: translate(2px, -2px);
-    opacity: 0.6;
-}
-
-.split-title::after {
-    color: #ec4899;
-    transform: translate(-2px, 2px);
-    opacity: 0.6;
-}
-
-        .subtitle {
-            font-family: 'Space Mono', monospace;
+            font-family: 'Oxanium', sans-serif;
+            font-size: clamp(2.6rem, 6vw, 3.8rem);
+            font-weight: 800;
             text-align: center;
-            color: #c084fc;
-            margin-bottom: 16px;
-            font-size: 0.875rem;
+            color: #f5e9ff;
+            letter-spacing: 0.18em;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 25px rgba(139, 92, 246, 0.45);
+            margin-bottom: 8px;
+            white-space: nowrap;
         }
+
+        .split-title { position: relative; }
+        .split-title::before, .split-title::after {
+            content: attr(data-text);
+            position: absolute; left: 0; top: 0; width: 100%;
+            text-align: center; pointer-events: none;
+        }
+        .split-title::before { color: #22d3ee; transform: translate(2px, -2px); opacity: 0.6; }
+        .split-title::after { color: #ec4899; transform: translate(-2px, 2px); opacity: 0.6; }
 
         .game-board {
             background: rgba(15, 23, 42, 0.5);
@@ -121,26 +88,25 @@
             background: linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(139, 92, 246, 0.3));
             border-color: rgba(168, 85, 247, 0.3);
         }
+        .stat-box.turn .stat-label { color: #c084fc; }
 
         .stat-box.enemies {
             background: linear-gradient(135deg, rgba(236, 72, 153, 0.5), rgba(236, 72, 153, 0.3));
             border-color: rgba(236, 72, 153, 0.3);
         }
+        .stat-box.enemies .stat-label { color: #f9a8d4; }
 
         .stat-box.target {
             background: linear-gradient(135deg, rgba(6, 182, 212, 0.5), rgba(6, 182, 212, 0.3));
             border-color: rgba(6, 182, 212, 0.3);
         }
+        .stat-box.target .stat-label { color: #22d3ee; }
 
         .stat-label {
             font-family: 'Space Mono', monospace;
             font-size: 0.75rem;
             margin-bottom: 4px;
         }
-
-        .stat-box.turn .stat-label { color: #c084fc; }
-        .stat-box.enemies .stat-label { color: #f9a8d4; }
-        .stat-box.target .stat-label { color: #22d3ee; }
 
         .stat-value {
             font-family: 'Orbitron', sans-serif;
@@ -183,8 +149,7 @@
 
         .cell-number {
             position: absolute;
-            top: 4px;
-            left: 4px;
+            top: 4px; left: 4px;
             font-family: monospace;
             font-size: clamp(0.6rem, 1.2vw, 0.75rem);
             color: rgba(168, 85, 247, 0.5);
@@ -194,7 +159,19 @@
         .target-svg { width: clamp(20px, 4vw, 32px); height: clamp(20px, 4vw, 32px); color: #22d3ee; }
 
         .enemy { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; animation: enemy-spawn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .enemy-shape { width: clamp(28px, 5vw, 40px); height: clamp(28px, 5vw, 40px); background: linear-gradient(135deg, #ec4899, #8b5cf6); border-radius: 8px; transform: rotate(45deg); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5); }
+        .enemy-shape { width: clamp(28px, 5vw, 40px); height: clamp(28px, 5vw, 40px); border-radius: 8px; transform: rotate(45deg); }
+
+        /* 通常の敵（ピンク・紫系） */
+        .enemy.type-a .enemy-shape {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5);
+        }
+
+        /* 色違いの敵（オレンジ・赤系） - 8ターンクリア後に解禁 */
+        .enemy.type-b .enemy-shape {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+        }
 
         .explosion { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; animation: explode 0.3s ease-out forwards; }
         .explosion-icon { width: clamp(40px, 8vw, 64px); height: clamp(40px, 8vw, 64px); color: #fbbf24; }
@@ -206,10 +183,57 @@
             margin-bottom: 16px;
             border: 1px solid rgba(168, 85, 247, 0.2);
         }
-
         .instructions p { font-family: 'Space Mono', monospace; color: #c084fc; font-size: 1rem; margin: 2px 0; line-height: 1.3; }
         .instructions .title { color: #e9d5ff; font-weight: bold; font-size: 1.125rem; }
         .instructions .highlight { color: #f9a8d4; margin-top: 8px; font-size: 1.0625rem; font-weight: bold; }
+
+        .mode-toggle {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mode-toggle-label {
+            font-family: 'Space Mono', monospace;
+            color: #f59e0b;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border: 2px solid rgba(168, 85, 247, 0.3);
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(to right, #f59e0b, #ef4444);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(30px);
+        }
 
         .buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
         button {
@@ -221,10 +245,7 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
 
         button:hover:not(:disabled) { transform: scale(1.05); }
@@ -244,9 +265,10 @@
             border: 1px solid rgba(168, 85, 247, 0.3); 
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); 
             text-align: center; 
-            max-width: 600px;
+            max-width: 600px; 
             width: 90%;
             animation: modal-slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
         }
 
         .perfect-modal-content {
@@ -255,87 +277,96 @@
             animation: modal-slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), perfect-glow 2s ease-in-out infinite;
         }
 
-        .victory-text { }
-        .modal-emoji { display: none; }
-        .modal-game-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: #e9d5ff;
-            margin-bottom: 16px;
-            letter-spacing: 0.15em;
+        .unlock-notification-content {
+            border: 2px solid #f59e0b;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 60px rgba(245, 158, 11, 0.3);
+            animation: modal-slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-game-name { 
+            font-family: 'Orbitron', sans-serif; 
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            font-weight: 900; 
+            color: #e9d5ff; 
+            margin-bottom: 16px; 
+            letter-spacing: 0.15em; 
             text-shadow: 0 0 15px rgba(192, 132, 252, 0.5);
+            white-space: nowrap;
         }
         .modal-title { 
             font-family: 'Orbitron', sans-serif; 
-            font-size: clamp(2.5rem, 8vw, 4rem); 
+            font-size: clamp(2rem, 10vw, 4rem); 
             font-weight: 900; 
-            color: #ffffff;
+            color: #ffffff; 
             margin-bottom: 20px; 
-            letter-spacing: 0.2em;
-            word-wrap: break-word;
+            letter-spacing: 0.1em;
+            line-height: 1.2;
         }
-        .perfect-title {
-            color: #fbbf24;
-            text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+        .modal-title-line {
+            display: block;
+            white-space: nowrap;
         }
-        .modal-subtitle {
-            font-family: 'Space Mono', monospace;
-            font-size: 1rem;
-            color: #fbbf24;
-            margin-bottom: 12px;
-            letter-spacing: 0.05em;
+        .perfect-title { color: #fbbf24; text-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
+        .unlock-title { 
+            color: #f59e0b; 
+            text-shadow: 0 0 20px rgba(245, 158, 11, 0.5); 
+            font-size: clamp(1.5rem, 8vw, 3rem);
+            line-height: 1.3;
+        }
+        .modal-subtitle { 
+            font-family: 'Space Mono', monospace; 
+            font-size: clamp(0.75rem, 3vw, 1rem);
+            color: #fbbf24; 
+            margin-bottom: 12px; 
+            letter-spacing: 0.05em; 
         }
         .modal-turns { 
             font-family: 'Space Mono', monospace; 
-            font-size: 1.25rem; 
+            font-size: clamp(0.9rem, 4vw, 1.25rem);
             color: #c084fc; 
-            margin-bottom: 40px;
-            letter-spacing: 0.1em;
+            margin-bottom: 40px; 
+            letter-spacing: 0.1em; 
         }
-        #perfectTurns {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #fbbf24;
-            text-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+        .unlock-msg { 
+            font-family: 'Space Mono', monospace; 
+            font-size: clamp(0.7rem, 3vw, 0.9rem);
+            color: #f59e0b; 
+            margin-top: -30px; 
+            margin-bottom: 30px; 
+            font-weight: bold; 
         }
+        .unlock-description { 
+            font-family: 'Space Mono', monospace; 
+            font-size: clamp(0.8rem, 3.5vw, 1rem);
+            color: #c084fc; 
+            margin-bottom: 40px; 
+            line-height: 1.6; 
+        }
+
+        #perfectTurns { 
+            font-size: clamp(1rem, 4.5vw, 1.5rem);
+            font-weight: 700; 
+            color: #fbbf24; 
+            text-shadow: 0 0 15px rgba(251, 191, 36, 0.4); 
+        }
+        
         .modal-btn { 
-            font-size: 1rem; 
+            font-size: clamp(0.9rem, 3.5vw, 1rem);
             padding: 14px 40px; 
             background: #8b5cf6; 
-            color: white;
-            border: none;
-            letter-spacing: 0.1em;
-            font-weight: 700;
-            margin: 0 auto;
-            display: inline-block;
+            color: white; 
+            border: none; 
+            letter-spacing: 0.1em; 
+            font-weight: 700; 
+            margin: 0 auto; 
+            display: inline-block; 
             transition: all 0.3s ease;
         }
-        .modal-btn:hover {
-            background: #7c3aed;
-        }
+        .modal-btn:hover { background: #7c3aed; }
 
-        @keyframes modal-fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes modal-slide-up {
-            from { 
-                opacity: 0;
-                transform: translateY(30px); 
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0); 
-            }
-        }
-
-        @keyframes perfect-glow {
-            0%, 100% { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 60px rgba(251, 191, 36, 0.3); }
-            50% { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 80px rgba(251, 191, 36, 0.5); }
-        }
-
+        @keyframes modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes modal-slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes perfect-glow { 0%, 100% { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 60px rgba(251, 191, 36, 0.3); } 50% { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 80px rgba(251, 191, 36, 0.5); } }
         @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px rgba(168,85,247,0.4);} 50% { box-shadow: 0 0 40px rgba(168,85,247,0.8);} }
         @keyframes enemy-spawn { 0%{transform:scale(0) rotate(0deg);opacity:0;}50%{transform:scale(1.2) rotate(180deg);}100%{transform:scale(1) rotate(360deg);opacity:1;} }
         @keyframes explode { 0%{transform:scale(1);opacity:1;}50%{transform:scale(2);opacity:0.5;}100%{transform:scale(0);opacity:0;} }
@@ -343,16 +374,9 @@
 </head>
 <body>
     <div id="scaleWrapper">
-        <!-- タイトル（JS の判定で表示/非表示） -->
-        <h1
-  id="pageTitle"
-  class="split-title"
-  data-text="分裂パズル"
-  style="position:absolute; left:50%; transform:translateX(-50%); display:none; pointer-events:none;"
->
-  分裂パズル
-</h1>
-
+        <h1 id="pageTitle" class="split-title" data-text="分裂パズル" style="position:absolute; left:50%; transform:translateX(-50%); display:none; pointer-events:none;">
+            分裂パズル
+        </h1>
 
         <div id="container" class="container">
             <div class="game-board" id="gameBoard">
@@ -381,8 +405,15 @@
                     <p class="highlight">全ての敵を倒せばクリア！</p>
                 </div>
 
+                <div class="mode-toggle" id="modeToggleContainer">
+                    <div class="mode-toggle-label">色違いモード</div>
+                    <div class="toggle-switch" id="modeToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+
                 <div class="buttons">
-                    <button class="execute-btn" id="executeBtn" disabled>攻撃</button>
+                    <button class="execute-btn" id="executeBtn" disabled><span id="executeBtnText">攻撃</span></button>
                     <button class="reset-btn" id="resetBtn">
                         リセット
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -409,7 +440,10 @@
         <div class="modal-content perfect-modal-content">
             <div class="victory-text">
                 <div class="modal-game-name">分裂パズル</div>
-                <div class="modal-title perfect-title">PERFECT CLEAR</div>
+                <div class="modal-title perfect-title">
+                    <span class="modal-title-line">PERFECT</span>
+                    <span class="modal-title-line">CLEAR</span>
+                </div>
                 <div class="modal-subtitle">8ターンクリア達成</div>
                 <div class="modal-turns" id="perfectTurns">理論上最速クリア</div>
                 <button class="modal-btn" id="playAgainPerfectBtn">RESTART</button>
@@ -417,30 +451,49 @@
         </div>
     </div>
 
-    <script>
-        /* --- ゲームロジック（元のまま） --- */
-        const GRID_SIZE = 7;
-        const INITIAL_ENEMIES = [3, 4]; // 0-indexed
+    <div class="modal" id="unlockNotificationModal">
+        <div class="modal-content unlock-notification-content">
+            <div class="victory-text">
+                <div class="modal-game-name">分裂パズル</div>
+                <div class="modal-title unlock-title">
+                    <span class="modal-title-line">色違いモード</span>
+                    <span class="modal-title-line">解放</span>
+                </div>
+                <div class="unlock-description">8ターンクリアを達成したため、<br>色違いモードが使用可能になりました！</div>
+                <button class="modal-btn" id="unlockOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
 
-        let enemies = [...INITIAL_ENEMIES];
+    <script>
+        /* --- ゲームロジック --- */
+        const GRID_SIZE = 7;
+        const INITIAL_POSITIONS = [3, 4]; // 0-indexed
+
+        let enemies = []; 
         let selectedTarget = null;
         let turn = 0;
         let animating = false;
         let showExplosion = [];
+        let shinyModeEnabled = false;
 
         const grid = document.getElementById('grid');
         const executeBtn = document.getElementById('executeBtn');
-        const executeBtnText = document.getElementById('executeBtnText') || document.createElement('span');
+        const executeBtnText = document.getElementById('executeBtnText');
         const resetBtn = document.getElementById('resetBtn');
         const turnDisplay = document.getElementById('turn');
         const enemyCountDisplay = document.getElementById('enemyCount');
         const targetDisplay = document.getElementById('targetDisplay');
         const victoryModal = document.getElementById('victoryModal');
         const perfectModal = document.getElementById('perfectModal');
+        const unlockNotificationModal = document.getElementById('unlockNotificationModal');
         const finalTurnsDisplay = document.getElementById('finalTurns');
         const playAgainBtn = document.getElementById('playAgainBtn');
         const playAgainPerfectBtn = document.getElementById('playAgainPerfectBtn');
+        const unlockOkBtn = document.getElementById('unlockOkBtn');
         const pageTitle = document.getElementById('pageTitle');
+        const modeToggleContainer = document.getElementById('modeToggleContainer');
+        const modeToggle = document.getElementById('modeToggle');
 
         function initGrid() {
             grid.innerHTML = '';
@@ -452,7 +505,6 @@
                 cell.addEventListener('click', () => selectTarget(i));
                 grid.appendChild(cell);
             }
-            // 初回描画後にスケール調整
             requestAnimationFrame(adjustScale);
         }
 
@@ -463,34 +515,30 @@
                 if (animating) cell.classList.add('disabled');
                 if (selectedTarget === i) cell.classList.add('selected');
 
-                // Clear previous content except cell number
                 const cellNumber = cell.querySelector('.cell-number');
                 cell.innerHTML = '';
                 cell.appendChild(cellNumber);
 
-                // Add target icon
                 if (selectedTarget === i) {
                     const targetIcon = document.createElement('div');
                     targetIcon.className = 'target-icon';
                     targetIcon.innerHTML = `
                         <svg class="target-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <circle cx="12" cy="12" r="6"/>
-                            <circle cx="12" cy="12" r="2"/>
+                            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
                         </svg>
                     `;
                     cell.appendChild(targetIcon);
                 }
 
-                // Add enemy
-                if (enemies.includes(i) && !showExplosion.includes(i)) {
+                // 敵の描画
+                const enemyInCell = enemies.find(e => e.pos === i);
+                if (enemyInCell && !showExplosion.includes(i)) {
                     const enemy = document.createElement('div');
-                    enemy.className = 'enemy';
+                    enemy.className = 'enemy ' + enemyInCell.type;
                     enemy.innerHTML = '<div class="enemy-shape"></div>';
                     cell.appendChild(enemy);
                 }
 
-                // Add explosion
                 if (showExplosion.includes(i)) {
                     const explosion = document.createElement('div');
                     explosion.className = 'explosion';
@@ -502,7 +550,6 @@
                     cell.appendChild(explosion);
                 }
             });
-            // 各フレームで必要ならスケール再調整（要素サイズが変わるため）
             requestAnimationFrame(adjustScale);
         }
 
@@ -521,23 +568,23 @@
             if (executeBtnText) executeBtnText.textContent = '攻撃中...';
             if (executeBtn) executeBtn.disabled = true;
 
-            // Step 1: Enemy split phase
             setTimeout(() => {
                 const newEnemies = [];
-                enemies.forEach(pos => {
-                    if (pos > 0) newEnemies.push(pos - 1);
-                    if (pos < GRID_SIZE - 1) newEnemies.push(pos + 1);
+                enemies.forEach(enemy => {
+                    if (enemy.pos > 0) newEnemies.push({ pos: enemy.pos - 1, type: enemy.type });
+                    if (enemy.pos < GRID_SIZE - 1) newEnemies.push({ pos: enemy.pos + 1, type: enemy.type });
                 });
                 enemies = newEnemies;
-                const uniqueEnemies = [...new Set(enemies)].length;
-                enemyCountDisplay.textContent = uniqueEnemies;
+
+                const uniquePosCount = [...new Set(enemies.map(e => e.pos))].length;
+                enemyCountDisplay.textContent = uniquePosCount;
                 renderGrid();
 
-                // Step 2: Player attack phase
                 setTimeout(() => {
-                    const afterAttack = newEnemies.filter(pos => pos !== selectedTarget);
+                    const afterAttack = enemies.filter(e => e.pos !== selectedTarget);
+                    const hit = enemies.some(e => e.pos === selectedTarget);
 
-                    if (newEnemies.includes(selectedTarget)) {
+                    if (hit) {
                         showExplosion = [selectedTarget];
                         renderGrid();
                         setTimeout(() => {
@@ -547,17 +594,19 @@
                     }
 
                     enemies = afterAttack;
-                    const uniqueEnemies = [...new Set(enemies)].length;
-                    enemyCountDisplay.textContent = uniqueEnemies;
+                    const uniquePosCount = [...new Set(enemies.map(e => e.pos))].length;
+                    enemyCountDisplay.textContent = uniquePosCount;
+                    
                     turn++;
                     turnDisplay.textContent = turn;
                     selectedTarget = null;
                     targetDisplay.textContent = '-';
 
-                    // Check win condition
-                    if (afterAttack.length === 0) {
+                    if (enemies.length === 0) {
                         setTimeout(() => {
                             if (turn === 8) {
+                                const wasUnlocked = localStorage.getItem('splitPuzzleShinyUnlocked') === 'true';
+                                localStorage.setItem('splitPuzzleShinyUnlocked', 'true');
                                 perfectModal.classList.add('show');
                             } else {
                                 finalTurnsDisplay.textContent = `${turn} TURNS`;
@@ -573,53 +622,106 @@
             }, 100);
         }
 
+        function updateModeToggleVisibility() {
+            const isUnlocked = localStorage.getItem('splitPuzzleShinyUnlocked') === 'true';
+            if (isUnlocked) {
+                modeToggleContainer.style.display = 'flex';
+            } else {
+                modeToggleContainer.style.display = 'none';
+            }
+        }
+
         function resetGame() {
-            enemies = [...INITIAL_ENEMIES];
+            const isUnlocked = localStorage.getItem('splitPuzzleShinyUnlocked') === 'true';
+
+            enemies = INITIAL_POSITIONS.map(pos => ({
+                pos: pos,
+                type: (isUnlocked && shinyModeEnabled && pos === 3) ? 'type-b' : 'type-a'
+            }));
+
             selectedTarget = null;
             turn = 0;
             animating = false;
             showExplosion = [];
 
             turnDisplay.textContent = '0';
-            const uniqueEnemies = [...new Set(enemies)].length;
-            enemyCountDisplay.textContent = uniqueEnemies;
+            const uniquePosCount = [...new Set(enemies.map(e => e.pos))].length;
+            enemyCountDisplay.textContent = uniquePosCount;
             targetDisplay.textContent = '-';
             if (executeBtn) executeBtn.disabled = true;
             if (executeBtnText) executeBtnText.textContent = '攻撃';
             victoryModal.classList.remove('show');
             perfectModal.classList.remove('show');
 
+            updateModeToggleVisibility();
             renderGrid();
         }
 
         if (executeBtn) executeBtn.addEventListener('click', executeRound);
         if (resetBtn) resetBtn.addEventListener('click', resetGame);
-        if (playAgainBtn) playAgainBtn.addEventListener('click', resetGame);
-        if (playAgainPerfectBtn) playAgainPerfectBtn.addEventListener('click', resetGame);
+        
+        if (playAgainBtn) {
+            playAgainBtn.addEventListener('click', () => {
+                victoryModal.classList.remove('show');
+                const wasUnlocked = localStorage.getItem('splitPuzzleShinyUnlocked') === 'true';
+                const justUnlockedNow = localStorage.getItem('splitPuzzleJustUnlocked') === 'true';
+                
+                if (wasUnlocked && justUnlockedNow) {
+                    localStorage.removeItem('splitPuzzleJustUnlocked');
+                    unlockNotificationModal.classList.add('show');
+                } else {
+                    resetGame();
+                }
+            });
+        }
+        
+        if (playAgainPerfectBtn) {
+            playAgainPerfectBtn.addEventListener('click', () => {
+                const wasUnlocked = localStorage.getItem('splitPuzzleShinyUnlocked') === 'true';
+                if (!wasUnlocked) {
+                    localStorage.setItem('splitPuzzleJustUnlocked', 'true');
+                }
+                perfectModal.classList.remove('show');
+                unlockNotificationModal.classList.add('show');
+            });
+        }
 
-        // Initialize
+        if (unlockOkBtn) {
+            unlockOkBtn.addEventListener('click', () => {
+                unlockNotificationModal.classList.remove('show');
+                resetGame();
+            });
+        }
+
+        if (modeToggle) {
+            modeToggle.addEventListener('click', () => {
+                if (animating) return;
+                shinyModeEnabled = !shinyModeEnabled;
+                
+                if (shinyModeEnabled) {
+                    modeToggle.classList.add('active');
+                } else {
+                    modeToggle.classList.remove('active');
+                }
+                
+                resetGame();
+            });
+        }
+
         initGrid();
-        renderGrid();
+        resetGame();
 
-        /* --- ここから自動スケーリング処理（中央基準に変更） + タイトル表示判定（改善版） --- */
+        /* --- 自動スケーリング処理 --- */
         const scaleWrapper = document.getElementById('scaleWrapper');
         const container = document.getElementById('container');
 
         function adjustScale() {
-            // リセット
             container.style.transform = 'none';
-            // hide title for measurement safety (we'll control visibility below)
-            if (pageTitle) {
-                pageTitle.style.display = 'none';
-                pageTitle.style.visibility = 'hidden';
-            }
+            if (pageTitle) { pageTitle.style.display = 'none'; pageTitle.style.visibility = 'hidden'; }
 
-            // 利用可能な幅・高さ（小さめの余白を残す）
             const availW = Math.max(1, scaleWrapper.clientWidth - 16);
             const availH = Math.max(1, scaleWrapper.clientHeight - 16);
 
-            // コンテナの自然サイズを取得
-            // 一旦一時的に位置を static にしてサイズ取得（古いブラウザ回避）
             const prevPosition = container.style.position;
             const prevLeft = container.style.left;
             const prevTop = container.style.top;
@@ -627,67 +729,47 @@
             const rect = container.getBoundingClientRect();
             const contW = rect.width || container.offsetWidth || 1;
             const contH = rect.height || container.offsetHeight || 1;
-            // 元に戻す
             container.style.position = prevPosition || 'absolute';
             container.style.left = prevLeft || '50%';
             container.style.top = prevTop || '50%';
 
-            // タイトルの自然高さを測る（ページ上に挿入して測れるようにする）
             let titleH = 0;
-            const titleMargin = 8; // タイトルとゲームの間に取る余白
+            const titleMargin = 8;
             if (pageTitle) {
-                // temporarily show invisibly to measure
                 pageTitle.style.display = 'block';
                 pageTitle.style.visibility = 'hidden';
                 pageTitle.style.top = '0px';
                 titleH = pageTitle.offsetHeight || 0;
-                // hide again for now
                 pageTitle.style.display = 'none';
                 pageTitle.style.visibility = 'hidden';
             }
 
-            // スケール（タイトルなし・ありの両方を計算）
             const scaleWithoutTitle = Math.min(1, availW / contW, availH / contH);
-
-            // available height for container when title is present
             const availHWithTitle = Math.max(0, availH - (titleH + titleMargin));
             const scaleWithTitle = Math.min(1, availW / contW, (availHWithTitle > 0 ? (availHWithTitle / contH) : 0));
 
-            // Decide: prefer to show title by default, BUT if showing it reduces the game's scale
-            // significantly compared to hiding it, then hide the title so the game can be larger.
-            // Use a small tolerance to avoid flicker: if scaleWithTitle is within 1% of scaleWithoutTitle,
-            // keep the title (so title shown when it doesn't noticeably shrink the game).
             const TOLERANCE = 0.01;
-
             let useTitle = false;
             let chosenScale = scaleWithoutTitle;
 
             if (scaleWithTitle === 0) {
-                // cannot show title at all (no space)
                 useTitle = false;
                 chosenScale = scaleWithoutTitle;
             } else {
-                // Prefer title if it doesn't reduce scale by more than tolerance
                 if (scaleWithTitle >= (scaleWithoutTitle - TOLERANCE)) {
                     useTitle = true;
                     chosenScale = scaleWithTitle;
                 } else {
-                    // title would shrink game noticeably -> hide title and allow larger game area
                     useTitle = false;
                     chosenScale = scaleWithoutTitle;
                 }
             }
 
-            // Apply title visibility and position
             if (pageTitle) {
                 if (useTitle) {
                     pageTitle.style.display = 'block';
                     pageTitle.style.visibility = 'visible';
-                    // compute visual top position so title sits above container with margin
-                    // visualTopGap = (viewportHeight - contH * chosenScale) / 2
                     const visualTopGap = (scaleWrapper.clientHeight - contH * chosenScale) / 2;
-                    // place title so its bottom is titleMargin px above container top:
-                    // topPos = visualTopGap - titleH - titleMargin
                     let topPos = Math.round(visualTopGap - titleH - titleMargin);
                     if (topPos < 8) topPos = 8;
                     pageTitle.style.top = `${topPos}px`;
@@ -697,12 +779,10 @@
                 }
             }
 
-            // 中央に縮小表示するため、translate(-50%,-50%) と scale を組み合わせる。
             container.style.transform = `translate(-50%, -50%) scale(${chosenScale})`;
             container.style.transformOrigin = 'center center';
         }
 
-        // リサイズ・向き変更で再計算
         window.addEventListener('resize', () => requestAnimationFrame(adjustScale));
         window.addEventListener('orientationchange', () => requestAnimationFrame(adjustScale));
         window.addEventListener('load', () => requestAnimationFrame(adjustScale));
